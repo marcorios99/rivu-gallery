@@ -1,0 +1,20 @@
+Rivu Gallery is a simple, private gallery for browsing photos and videos on Android.
+
+It focuses on the essentials: albums, collection view, videos, favorites, recycle bin support, image properties, EXIF tools, basic editing, and customizable display options.
+
+Key features:
+
+- Browse local photos and videos
+- Organize media by albums and folders
+- View favorites and videos from the bottom navigation
+- Recover deleted media from the recycle bin
+- View image properties and metadata
+- Remove EXIF metadata when needed
+- Customize themes, layout, sorting, grouping, and visibility options
+
+Rivu Gallery is open source and based on Fossify Gallery, licensed under GPLv3.
+
+Source code:
+https://github.com/marcorios99/rivu-gallery
+
+This app is an independent fork and is not affiliated with, endorsed by, or maintained by FossifyOrg.
