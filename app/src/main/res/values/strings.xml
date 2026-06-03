@@ -3,7 +3,7 @@
     <string name="app_launcher_name">Gallery</string>
     <string name="about_footer">Independent open-source gallery</string>
     <string name="all_fossify_apps">More apps</string>
-    <string name="contributors_developers">Fossify Gallery contributors and Rivu Gallery contributors</string>
+    <string name="contributors_developers">Rivu Gallery contributors</string>
     <string name="contributors_label">Rivu Gallery is based on Fossify Gallery and includes work from its original contributors. This fork is independently maintained.</string>
     <string name="donate_new">Rivu Gallery is open source and independently maintained.</string>
     <string name="donate_short">Rivu Gallery is open source and independently maintained.</string>
