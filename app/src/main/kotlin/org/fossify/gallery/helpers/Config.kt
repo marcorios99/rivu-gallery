@@ -88,6 +88,10 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getStringSet(PINNED_FOLDERS, HashSet<String>())!!
         set(pinnedFolders) = prefs.edit().putStringSet(PINNED_FOLDERS, pinnedFolders).apply()
 
+    var managedFolders: Set<String>
+        get() = prefs.getStringSet(MANAGED_FOLDERS, HashSet<String>())!!
+        set(managedFolders) = prefs.edit().remove(MANAGED_FOLDERS).putStringSet(MANAGED_FOLDERS, managedFolders).apply()
+
     var showAll: Boolean
         get() = prefs.getBoolean(SHOW_ALL, false)
         set(showAll) = prefs.edit().putBoolean(SHOW_ALL, showAll).apply()
@@ -106,6 +110,32 @@ class Config(context: Context) : BaseConfig(context) {
         currPinnedFolders.removeAll(paths)
         pinnedFolders = currPinnedFolders
     }
+
+    fun addManagedFolder(path: String) {
+        if (path.isEmpty()) {
+            return
+        }
+
+        val currManagedFolders = HashSet<String>(managedFolders)
+        currManagedFolders.add(path.trimEnd('/'))
+        managedFolders = currManagedFolders
+    }
+
+    fun removeManagedFolder(path: String) {
+        val currManagedFolders = HashSet<String>(managedFolders)
+        currManagedFolders.remove(path.trimEnd('/'))
+        managedFolders = currManagedFolders
+    }
+
+    fun updateManagedFolderPath(oldPath: String, newPath: String) {
+        val currManagedFolders = HashSet<String>(managedFolders)
+        if (currManagedFolders.remove(oldPath.trimEnd('/'))) {
+            currManagedFolders.add(newPath.trimEnd('/'))
+            managedFolders = currManagedFolders
+        }
+    }
+
+    fun isManagedFolder(path: String) = managedFolders.contains(path.trimEnd('/'))
 
     fun addExcludedFolder(path: String) {
         addExcludedFolders(HashSet<String>(Arrays.asList(path)))

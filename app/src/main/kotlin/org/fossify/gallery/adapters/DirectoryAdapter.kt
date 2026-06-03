@@ -339,6 +339,9 @@ class DirectoryAdapter(
                         activity.runOnUiThread {
                             val uiStartedAt = System.currentTimeMillis()
                             Log.d("RivuRename", "UI update start elapsed=${uiStartedAt - renameStartedAt}ms")
+                            config.updateManagedFolderPath(sourcePath, it)
+                            config.addManagedFolder(it)
+                            Log.d("RivuManaged", "renamed managed folder oldPath=$sourcePath newPath=$it")
                             firstDir.apply {
                                 path = it
                                 name = it.getFilenameFromPath()

@@ -88,6 +88,7 @@ import org.fossify.gallery.dialogs.ChangeViewTypeDialog
 import org.fossify.gallery.dialogs.FilterMediaDialog
 import org.fossify.gallery.dialogs.GrantAllFilesDialog
 import org.fossify.gallery.extensions.addTempFolderIfNeeded
+import org.fossify.gallery.extensions.checkAppendingHidden
 import org.fossify.gallery.extensions.config
 import org.fossify.gallery.extensions.createDirectoryFromMedia
 import org.fossify.gallery.extensions.directoryDB
@@ -884,12 +885,17 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     ) {
         val OTGPath = config.OTGPath
         deleteFiles(fileDirItems) {
-            runOnUiThread {
-                refreshItems()
-            }
-
             ensureBackgroundThread {
+                folders.filter {
+                    it.isDirectory && it.toFileDirItem(this).getProperFileCount(this, true) == 0
+                }.forEach {
+                    Log.d("RivuManaged", "deleting selected empty folder path=${it.absolutePath}")
+                    tryDeleteFileDirItem(it.toFileDirItem(this), true, true)
+                }
+
                 folders.filter { !getDoesFilePathExist(it.absolutePath, OTGPath) }.forEach {
+                    config.removeManagedFolder(it.absolutePath)
+                    Log.d("RivuManaged", "removed managed folder after delete path=${it.absolutePath}")
                     directoryDB.deleteDirPath(it.absolutePath)
                 }
 
@@ -902,6 +908,10 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
                         .forEach {
                             tryDeleteFileDirItem(it.toFileDirItem(this), true, true)
                         }
+                }
+
+                runOnUiThread {
+                    refreshItems()
                 }
             }
         }
@@ -978,6 +988,8 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     private fun createNewFolder() {
         FilePickerDialog(this, internalStoragePath, false, config.shouldShowHidden, false, true) {
             CreateNewFolderDialog(this, it) {
+                config.addManagedFolder(it)
+                Log.d("RivuManaged", "created managed folder path=$it")
                 config.tempFolderPath = it
                 ensureBackgroundThread {
                     gotDirectories(addTempFolderIfNeeded(getCurrentlyDisplayedDirs()))
@@ -1176,8 +1188,10 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
         mShouldStopFetching = false
 
         newDirs.removeAll { it.areFavorites() }
+        addMissingManagedFolders(newDirs)
 
         val dirs = getSortedDirectories(newDirs)
+        rememberVisibleFoldersAsManaged(dirs)
         if (config.groupDirectSubfolders) {
             mDirs = dirs.clone() as ArrayList<Directory>
         }
@@ -1269,11 +1283,18 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
                     android11Files = android11Files
                 )
 
+                val isManagedEmptyFolder = curMedia.isEmpty() && config.isManagedFolder(directory.path) && File(directory.path).isDirectory
                 val newDir = if (curMedia.isEmpty()) {
-                    if (directory.path != tempFolderPath) {
+                    if (isManagedEmptyFolder) {
+                        Log.d("RivuManaged", "keeping empty managed folder path=${directory.path}")
+                        createEmptyManagedDirectory(directory.path, hiddenString, includedFolders, noMediaFolders)
+                    } else if (directory.path != tempFolderPath) {
+                        Log.d("RivuManaged", "removing empty unmanaged folder path=${directory.path}")
                         dirPathsToRemove.add(directory.path)
+                        directory
+                    } else {
+                        directory
                     }
-                    directory
                 } else {
                     createDirectoryFromMedia(
                         path = directory.path,
@@ -1451,6 +1472,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
 
         val excludedFolders = config.excludedFolders
         val everShownFolders = config.everShownFolders.toMutableSet() as HashSet<String>
+        rememberVisibleFoldersAsManaged(dirs)
 
         // do not add excluded folders and their subfolders at everShownFolders
         dirs.filter { dir ->
@@ -1471,6 +1493,66 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
 
         mDirs = dirs.clone() as ArrayList<Directory>
         Log.d("RivuRename", "gotDirectories fully end duration=${System.currentTimeMillis() - gotDirectoriesStartedAt}ms")
+    }
+
+    private fun rememberVisibleFoldersAsManaged(dirs: ArrayList<Directory>) {
+        dirs.filter {
+            !it.areFavorites() && !it.isRecycleBin() && it.path.isNotEmpty() && File(it.path).isDirectory
+        }.forEach {
+            if (!config.isManagedFolder(it.path)) {
+                config.addManagedFolder(it.path)
+                Log.d("RivuManaged", "remembering visible folder path=${it.path}")
+            }
+        }
+    }
+
+    private fun addMissingManagedFolders(dirs: ArrayList<Directory>) {
+        val existingPaths = dirs.mapTo(HashSet()) { it.path.trimEnd('/') }
+        config.managedFolders.forEach { path ->
+            val normalizedPath = path.trimEnd('/')
+            val folder = File(normalizedPath)
+            if (normalizedPath.isNotEmpty() && !existingPaths.contains(normalizedPath) && folder.isDirectory) {
+                Log.d("RivuManaged", "adding missing managed folder path=$normalizedPath")
+                dirs.add(
+                    Directory(
+                        id = null,
+                        path = normalizedPath,
+                        tmb = "",
+                        name = normalizedPath.getFilenameFromPath(),
+                        mediaCnt = 0,
+                        modified = folder.lastModified(),
+                        taken = 0L,
+                        size = 0L,
+                        location = LOCATION_INTERNAL,
+                        types = 0,
+                        sortValue = getDirectorySortingValue(ArrayList(), normalizedPath, normalizedPath.getFilenameFromPath(), 0L, 0)
+                    )
+                )
+            }
+        }
+    }
+
+    private fun createEmptyManagedDirectory(
+        path: String,
+        hiddenString: String,
+        includedFolders: MutableSet<String>,
+        noMediaFolders: ArrayList<String>
+    ): Directory {
+        val folder = File(path)
+        val name = checkAppendingHidden(path, hiddenString, includedFolders, noMediaFolders)
+        return Directory(
+            id = null,
+            path = path,
+            tmb = "",
+            name = name,
+            mediaCnt = 0,
+            modified = folder.lastModified(),
+            taken = 0L,
+            size = 0L,
+            location = LOCATION_INTERNAL,
+            types = 0,
+            sortValue = getDirectorySortingValue(ArrayList(), path, name, 0L, 0)
+        )
     }
 
     private fun setAsDefaultFolder() {
@@ -1631,8 +1713,11 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
                             )
                 } == true
 
-                if (!hasMediaFile) {
+                if (!hasMediaFile && !config.isManagedFolder(it.path)) {
+                    Log.d("RivuManaged", "invalid empty unmanaged folder path=${it.path}")
                     invalidDirs.add(it)
+                } else if (!hasMediaFile) {
+                    Log.d("RivuManaged", "valid empty managed folder path=${it.path}")
                 }
             }
         }
