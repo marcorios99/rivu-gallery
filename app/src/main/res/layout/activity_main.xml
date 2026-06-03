@@ -84,10 +84,7 @@
             android:id="@+id/gallery_bottom_nav"
             layout="@layout/bottom_gallery_nav"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp" />
+            android:layout_height="64dp"
+            android:layout_alignParentBottom="true" />
     </RelativeLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

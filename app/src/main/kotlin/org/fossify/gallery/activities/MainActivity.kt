@@ -704,6 +704,8 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
         val selectedColor = getProperPrimaryColor()
         val defaultColor = getProperTextColor()
         binding.galleryBottomNav.apply {
+            root.setBackgroundColor(getProperBackgroundColor())
+            bottomNavDivider.setBackgroundColor(defaultColor)
             bottomNavCollection.setColorFilter(defaultColor)
             bottomNavVideos.setColorFilter(defaultColor)
             bottomNavFavorites.setColorFilter(defaultColor)

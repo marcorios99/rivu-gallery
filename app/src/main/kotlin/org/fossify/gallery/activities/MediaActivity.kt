@@ -29,6 +29,7 @@ import org.fossify.commons.extensions.getFilenameFromPath
 import org.fossify.commons.extensions.getIsPathDirectory
 import org.fossify.commons.extensions.getLatestMediaByDateId
 import org.fossify.commons.extensions.getLatestMediaId
+import org.fossify.commons.extensions.getProperBackgroundColor
 import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.extensions.getTimeFormat
@@ -734,6 +735,8 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
         val selectedColor = getProperPrimaryColor()
         val defaultColor = getProperTextColor()
         binding.galleryBottomNav.apply {
+            root.setBackgroundColor(getProperBackgroundColor())
+            bottomNavDivider.setBackgroundColor(defaultColor)
             bottomNavCollection.setColorFilter(if (mShowAll && mNavMediaType != TYPE_VIDEOS) selectedColor else defaultColor)
             bottomNavVideos.setColorFilter(if (mShowAll && mNavMediaType == TYPE_VIDEOS) selectedColor else defaultColor)
             bottomNavFavorites.setColorFilter(if (mPath == FAVORITES) selectedColor else defaultColor)
