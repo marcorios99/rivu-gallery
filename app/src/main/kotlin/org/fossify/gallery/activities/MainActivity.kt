@@ -1206,6 +1206,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
         val dirPathsToRemove = ArrayList<String>()
         val lastModifieds = mLastMediaFetcher!!.getLastModifieds()
         val dateTakens = mLastMediaFetcher!!.getDateTakens()
+        var directoriesChangedDuringScan = false
 
         if (
             config.showRecycleBinAtFolders
@@ -1301,7 +1302,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
                     sortValue = getDirectorySortingValue(curMedia, path, name, size, mediaCnt)
                 }
 
-                setupAdapter(dirs)
+                directoriesChangedDuringScan = true
 
                 // update directories and media files in the local db, delete invalid items. Intentionally creating a new thread
                 updateDBDirectory(directory)
@@ -1337,7 +1338,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
                     directoryDB.deleteDirPath(it.path)
                 }
                 dirs.removeAll(dirsToRemove)
-                setupAdapter(dirs)
+                directoriesChangedDuringScan = true
             }
         } catch (ignored: Exception) {
         }
@@ -1414,7 +1415,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
                 noMediaFolders = noMediaFolders
             )
             dirs.add(newDir)
-            setupAdapter(dirs)
+            directoriesChangedDuringScan = true
 
             // make sure to create a new thread for these operations, dont just use the common bg thread
             Thread {
@@ -1431,6 +1432,10 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
         mLoadedInitialPhotos = true
         if (config.appRunCount > 1) {
             checkLastMediaChanged()
+        }
+
+        if (directoriesChangedDuringScan) {
+            setupAdapter(dirs)
         }
 
         runOnUiThread {
